@@ -7,8 +7,8 @@ import os
 
 py.init()
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1050
+SCREEN_HEIGHT = 450
 screen = py.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 py.display.set_caption('KnotZ_Castle_Attack')
 
@@ -32,11 +32,16 @@ enemy_alive = 0
 max_towers = 4
 TOWER_COST = 5000
 tower_positions = [
-    [SCREEN_WIDTH - 250, SCREEN_HEIGHT - 200], 
-    [SCREEN_WIDTH - 200, SCREEN_HEIGHT - 150],
+    [SCREEN_WIDTH - 260, SCREEN_HEIGHT - 200], 
+    [SCREEN_WIDTH - 210, SCREEN_HEIGHT - 150],
     [SCREEN_WIDTH - 150, SCREEN_HEIGHT - 150],
     [SCREEN_WIDTH - 100, SCREEN_HEIGHT - 150],
 ]
+
+#load high score
+if os.path.exists('score.txt'):
+    with open('score.txt', 'r') as file:
+        high_score = int(file.read())
 
 font = py.font.SysFont('Futura', 30)
 font_60 = py.font.SysFont('Futura', 60)
@@ -100,10 +105,10 @@ def show_info():
 
 class Castle():
     def __init__(self, image100, image50, image25, x, y, scale):
-        self.health = 1000
+        self.health = 100
         self.max_health = self.health
         self.fired = False
-        self.money = 0
+        self.money = 000
         self.score = 0
 
         
@@ -259,74 +264,100 @@ run = True
 while run:
     clock.tick(FPS)
 
-    #Draw_everything in order of appearance
-    screen.blit(bg, (0,0))
-    castle.draw()
-    castle.shoot()
+    if game_over == False:
+        #Draw_everything in order of appearance
+        screen.blit(bg, (0,0))
+        castle.draw()
+        castle.shoot()
 
-    tower_group.draw(screen)
-    tower_group.update(enemy_group)
+        tower_group.draw(screen)
+        tower_group.update(enemy_group)
 
-    crosshair.draw()
+        crosshair.draw()
 
-    bullet_group.update()
-    bullet_group.draw(screen)
+        bullet_group.update()
+        bullet_group.draw(screen)
 
-    enemy_group.update(screen, castle, bullet_group)
+        enemy_group.update(screen, castle, bullet_group)
 
-    #show stats
-    show_info()
-    #upgrade buttons
-    if repair_button.draw(screen):
-        castle.repair()
-    if armor_button.draw(screen):
-        castle.armor()
-    if tower_button.draw(screen):
-        if castle.money >= TOWER_COST and len(tower_group) < max_towers:
-            tower = Tower(tower_img_100, tower_img_50,tower_img_25, 
-              tower_positions[len(tower_group)][0], tower_positions[len(tower_group)][1], 0.2)
-            tower_group.add(tower)
-            castle.money -= TOWER_COST
+        #show stats
+        show_info()
+        #upgrade buttons
+        if repair_button.draw(screen):
+            castle.repair()
+        if armor_button.draw(screen):
+            castle.armor()
+        if tower_button.draw(screen):
+            if castle.money >= TOWER_COST and len(tower_group) < max_towers:
+                tower = Tower(tower_img_100, tower_img_50,tower_img_25, 
+                tower_positions[len(tower_group)][0], tower_positions[len(tower_group)][1], 0.2)
+                tower_group.add(tower)
+                castle.money -= TOWER_COST
 
-    #create enemies
-    #check max number per level
-    if level_difficulty < target_difficulty:
-        if py.time.get_ticks() - last_enemy > ENEMY_TIMER:
+        #create enemies
+        #check max number per level
+        if level_difficulty < target_difficulty:
+            if py.time.get_ticks() - last_enemy > ENEMY_TIMER:
 
-            #create enemies
-            e = random.randint(0, len(enemy_types)-1)
-            enemy = Enemy(enemy_health[e], enemy_animation[e], -100, SCREEN_HEIGHT -100, 1)
-            enemy_group.add(enemy)
-            last_enemy = py.time.get_ticks()
-            #increase difficulty
-            level_difficulty += enemy_health[e]
+                #create enemies
+                e = random.randint(0, len(enemy_types)-1)
+                enemy = Enemy(enemy_health[e], enemy_animation[e], -100, SCREEN_HEIGHT -100, 1)
+                enemy_group.add(enemy)
+                last_enemy = py.time.get_ticks()
+                #increase difficulty
+                level_difficulty += enemy_health[e]
 
-    #check if all enemines have been spawned
-    if level_difficulty >= target_difficulty:
-        #check enemies alive
-        enemies_alive = 0
-        for e in enemy_group:
-            if e.alive == True:
-                enemies_alive += 1
-        #if all dead level complete
-        if enemies_alive == 0 and next_level == False:
-            next_level = True
-            level_reset_time = py.time.get_ticks()
+        #check if all enemines have been spawned
+        if level_difficulty >= target_difficulty:
+            #check enemies alive
+            enemies_alive = 0
+            for e in enemy_group:
+                if e.alive == True:
+                    enemies_alive += 1
+            #if all dead level complete
+            if enemies_alive == 0 and next_level == False:
+                next_level = True
+                level_reset_time = py.time.get_ticks()
 
-    #move onto the next level
-    if next_level == True:
-        draw_text('LEVEL COMPLETE!', font_60, WHITE, 200, 300)
+        #move onto the next level
+        if next_level == True:
+            draw_text('LEVEL COMPLETE!', font_60, WHITE, 200, 300)
+            #update high score
+            if castle.score > high_score:
+                high_score = castle.score
+                with open('score.txt', 'w') as file:
+                    file.write(str(high_score))
+            if py.time.get_ticks() - level_reset_time > 1500:
+                next_level = False
+                level += 1
+                last_enemy = py.time.get_ticks()
+                target_difficulty *= DIFFICULTY_MULTIPLIER
+                level_difficulty = 0
+                enemy_group.empty()
 
-        if py.time.get_ticks() - level_reset_time > 1500:
-            next_level = False
-            level += 1
-            last_enemy = py.time.get_ticks()
-            target_difficulty *= DIFFICULTY_MULTIPLIER
+        #check game over
+        if castle.health <= 0:
+            game_over = True
+    else:
+        draw_text('GAME_OVER!!', font_60, GREY, SCREEN_WIDTH //2 -150,SCREEN_HEIGHT //2)
+        draw_text('PRESS "A" TO PLAY 1 MO AGAIN', font, GREY, SCREEN_WIDTH //2 -200,SCREEN_HEIGHT //2 +80)
+        py.mouse.set_visible(True)
+        key = py.key.get_pressed()
+        if key[py.K_a]:
+            #reset
+            game_over = False
+            level = 1
+            target_difficulty = 1000
             level_difficulty = 0
+            last_enemy = py.time.get_ticks()
             enemy_group.empty()
-
-    
-    
+            tower_group.empty()
+            castle.score = 0
+            castle.health = 1000
+            castle.max_health = castle.health
+            castle.money = 0
+            py.mouse.set_visible(False)
+        
     #event handle
     for event in py.event.get():
         if event.type == py.QUIT:
