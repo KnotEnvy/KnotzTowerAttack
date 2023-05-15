@@ -340,7 +340,7 @@ while run:
             game_over = True
     else:
         draw_text('GAME_OVER!!', font_60, GREY, SCREEN_WIDTH //2 -150,SCREEN_HEIGHT //2)
-        draw_text('PRESS "A" TO PLAY 1 MO AGAIN', font, GREY, SCREEN_WIDTH //2 -200,SCREEN_HEIGHT //2 +80)
+        draw_text('PRESS "A" TO PLAY 1 MO AGAIN', font, GREY, SCREEN_WIDTH //2 -150,SCREEN_HEIGHT //2 +80)
         py.mouse.set_visible(True)
         key = py.key.get_pressed()
         if key[py.K_a]:
